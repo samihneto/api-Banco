@@ -13,12 +13,10 @@ import java.util.stream.Collectors;
 public class ContaController {
     private static final List<Conta> contas = new ArrayList<>();
 
-    // Endpoint para cadastrar uma conta
     @PostMapping("/cadastrar")
     public ResponseEntity<Object> cadastrarConta(@RequestBody Conta conta) {
         Map<String, String> erros = new HashMap<>();
 
-        // Validações
         if (conta.getNomeTitular() == null || conta.getNomeTitular().isEmpty()) {
             erros.put("nomeTitular", "Nome do titular é obrigatório");
         }
@@ -45,13 +43,11 @@ public class ContaController {
         return ResponseEntity.status(201).body(conta);
     }
 
-    // Endpoint para listar todas as contas cadastradas
     @GetMapping
     public ResponseEntity<List<Conta>> listarContas() {
         return ResponseEntity.ok(contas);
     }
 
-    // Endpoint para buscar uma conta por ID (número)
     @GetMapping("/{numero}")
     public ResponseEntity<Object> buscarContaPorId(@PathVariable int numero) {
         Optional<Conta> contaOptional = contas.stream()
@@ -61,7 +57,6 @@ public class ContaController {
         if (contaOptional.isPresent()) {
             return ResponseEntity.ok(contaOptional.get());
         } else {
-            // Retorna o status 404 com uma mensagem de erro
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("status", "404");
             errorResponse.put("message", "Conta não encontrada");
@@ -69,7 +64,6 @@ public class ContaController {
         }
     }
 
-    // Endpoint para buscar uma conta pelo CPF do titular
     @GetMapping("/cpf/{cpfTitular}")
     public ResponseEntity<Object> buscarContaPorCpf(@PathVariable String cpfTitular) {
         List<Conta> contasEncontradas = contas.stream()
@@ -79,11 +73,34 @@ public class ContaController {
         if (!contasEncontradas.isEmpty()) {
             return ResponseEntity.ok(contasEncontradas);
         } else {
-            // Retorna o status 404 com uma mensagem de erro
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("status", "404");
             errorResponse.put("message", "Conta não encontrada com esse CPF");
             return ResponseEntity.status(404).body(errorResponse);
         }
+    }
+
+    @PutMapping("/encerrar/{numero}")
+    public ResponseEntity<Object> encerrarConta(@PathVariable int numero) {
+        for (Conta conta : contas) {
+            if (conta.getNumero() == numero) {
+                if (!conta.isAtiva()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "status", "400",
+                        "message", "Conta já está inativa"
+                    ));
+                }
+                conta.setAtiva(false);
+                return ResponseEntity.ok(Map.of(
+                    "status", "200",
+                    "message", "Conta encerrada com sucesso"
+                ));
+            }
+        }
+        
+        return ResponseEntity.status(404).body(Map.of(
+            "status", "404",
+            "message", "Conta não encontrada"
+        ));
     }
 }
