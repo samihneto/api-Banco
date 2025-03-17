@@ -103,4 +103,39 @@ public class ContaController {
             "message", "Conta não encontrada"
         ));
     }
+
+    @PostMapping("/depositar")
+    public ResponseEntity<Object> depositar(@RequestBody Map<String, Object> deposito) {
+        int numeroConta = (int) deposito.get("numero");
+        double valor = (double) deposito.get("valor");
+
+        if (valor <= 0) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "400",
+                "message", "O valor do depósito deve ser positivo"
+            ));
+        }
+
+        for (Conta conta : contas) {
+            if (conta.getNumero() == numeroConta) {
+                if (!conta.isAtiva()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "status", "400",
+                        "message", "Conta inativa não pode receber depósitos"
+                    ));
+                }
+                conta.setSaldo(conta.getSaldo() + valor);
+                return ResponseEntity.ok(Map.of(
+                    "status", "200",
+                    "message", "Depósito realizado com sucesso",
+                    "saldoAtualizado", conta.getSaldo()
+                ));
+            }
+        }
+
+        return ResponseEntity.status(404).body(Map.of(
+            "status", "404",
+            "message", "Conta não encontrada"
+        ));
+    }
 }
