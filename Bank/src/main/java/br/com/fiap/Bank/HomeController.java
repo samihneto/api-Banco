@@ -10,6 +10,6 @@ public class HomeController {
 
     @GetMapping
     public String home() {
-        return "Projeto Banco Digital - Integrantes: João, Maria, Pedro";
+        return "Projeto Banco Digital - Feito por Samir Hage Neto - RM557260";
     }
 }
