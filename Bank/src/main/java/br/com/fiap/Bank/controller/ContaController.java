@@ -169,4 +169,53 @@ public ResponseEntity<Object> sacar(@RequestBody Map<String, Object> request) {
         "saldoAtualizado", conta.getSaldo()
     ));
 }
+@PostMapping("/pix")
+public ResponseEntity<Object> realizarPix(@RequestBody Map<String, Object> request) {
+    int numeroOrigem = (int) request.get("numeroOrigem");
+    int numeroDestino = (int) request.get("numeroDestino");
+    double valorPix = (double) request.get("valor");
+
+    Optional<Conta> contaOrigemOptional = contas.stream()
+            .filter(conta -> conta.getNumero() == numeroOrigem)
+            .findFirst();
+
+    Optional<Conta> contaDestinoOptional = contas.stream()
+            .filter(conta -> conta.getNumero() == numeroDestino)
+            .findFirst();
+
+    if (contaOrigemOptional.isEmpty()) {
+        return ResponseEntity.status(404).body(Map.of("status", "404", "message", "Conta de origem não encontrada"));
+    }
+    if (contaDestinoOptional.isEmpty()) {
+        return ResponseEntity.status(404).body(Map.of("status", "404", "message", "Conta de destino não encontrada"));
+    }
+
+    Conta contaOrigem = contaOrigemOptional.get();
+    Conta contaDestino = contaDestinoOptional.get();
+
+    if (!contaOrigem.isAtiva()) {
+        return ResponseEntity.badRequest().body(Map.of("status", "400", "message", "Conta de origem está inativa"));
+    }
+    if (!contaDestino.isAtiva()) {
+        return ResponseEntity.badRequest().body(Map.of("status", "400", "message", "Conta de destino está inativa"));
+    }
+
+    if (valorPix <= 0) {
+        return ResponseEntity.badRequest().body(Map.of("status", "400", "message", "O valor do Pix deve ser positivo"));
+    }
+
+    if (valorPix > contaOrigem.getSaldo()) {
+        return ResponseEntity.badRequest().body(Map.of("status", "400", "message", "Saldo insuficiente para realizar o Pix"));
+    }
+
+    contaOrigem.setSaldo(contaOrigem.getSaldo() - valorPix);
+    contaDestino.setSaldo(contaDestino.getSaldo() + valorPix);
+
+    return ResponseEntity.ok(Map.of(
+        "status", "200",
+        "message", "Pix realizado com sucesso",
+        "saldoAtualizadoOrigem", contaOrigem.getSaldo()
+    ));
+}
+
 }
