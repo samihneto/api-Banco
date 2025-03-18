@@ -138,4 +138,35 @@ public class ContaController {
             "message", "Conta não encontrada"
         ));
     }
+
+    @PostMapping("/sacar")
+public ResponseEntity<Object> sacar(@RequestBody Map<String, Object> request) {
+    int numeroConta = (int) request.get("numero");
+    double valorSaque = (double) request.get("valor");
+
+    Optional<Conta> contaOptional = contas.stream()
+            .filter(conta -> conta.getNumero() == numeroConta)
+            .findFirst();
+
+    if (contaOptional.isEmpty()) {
+        return ResponseEntity.status(404).body(Map.of("status", "404", "message", "Conta não encontrada"));
+    }
+    Conta conta = contaOptional.get();
+    if (!conta.isAtiva()) {
+        return ResponseEntity.badRequest().body(Map.of("status", "400", "message", "Conta inativa não pode realizar saques"));
+    }
+    if (valorSaque <= 0) {
+        return ResponseEntity.badRequest().body(Map.of("status", "400", "message", "O valor do saque deve ser positivo"));
+    }
+    if (valorSaque > conta.getSaldo()) {
+        return ResponseEntity.badRequest().body(Map.of("status", "400", "message", "Saldo insuficiente"));
+    }
+    conta.setSaldo(conta.getSaldo() - valorSaque);
+
+    return ResponseEntity.ok(Map.of(
+        "status", "200",
+        "message", "O saque foi realizado com sucesso",
+        "saldoAtualizado", conta.getSaldo()
+    ));
+}
 }
